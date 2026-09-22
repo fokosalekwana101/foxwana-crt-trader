@@ -74,7 +74,7 @@ export function findSwings(candles: Candle[], lookback = 2): SwingPoint[] {
   const swings: SwingPoint[] = [];
   for (let i = lookback; i < candles.length - lookback; i++) {
     const win = candles.slice(i - lookback, i + lookback + 1);
-    const c = candles[i];
+    const c = candles[i]!;
     if (c.high === Math.max(...win.map((w) => w.high))) swings.push({ index: i, price: c.high, kind: "high" });
     else if (c.low === Math.min(...win.map((w) => w.low))) swings.push({ index: i, price: c.low, kind: "low" });
   }
@@ -88,15 +88,15 @@ export function analyseStructure(candles: Candle[]): MarketStructure {
   const labels: { label: StructureLabel; price: number }[] = [];
 
   for (let i = 1; i < highs.length; i++)
-    labels.push({ label: highs[i].price > highs[i - 1].price ? "HH" : "LH", price: highs[i].price });
+    labels.push({ label: highs[i]!.price > highs[i - 1]!.price ? "HH" : "LH", price: highs[i]!.price });
   for (let i = 1; i < lows.length; i++)
-    labels.push({ label: lows[i].price > lows[i - 1].price ? "HL" : "LL", price: lows[i].price });
+    labels.push({ label: lows[i]!.price > lows[i - 1]!.price ? "HL" : "LL", price: lows[i]!.price });
 
   const up = labels.filter((l) => l.label === "HH" || l.label === "HL").length;
   const down = labels.filter((l) => l.label === "LH" || l.label === "LL").length;
   const bias: MarketStructure["bias"] = up === down ? "ranging" : up > down ? "bullish" : "bearish";
 
-  const last = candles[candles.length - 1];
+  const last = candles[candles.length - 1]!;
   const lastHigh = highs[highs.length - 2]?.price;
   const lastLow = lows[lows.length - 2]?.price;
 
@@ -125,11 +125,11 @@ export function analyseStructure(candles: Candle[]): MarketStructure {
 export function findOrderBlocks(candles: Candle[], structure: MarketStructure): OrderBlock[] {
   const avgRange = candles.reduce((a, c) => a + range(c), 0) / candles.length;
   const blocks: OrderBlock[] = [];
-  const last = candles[candles.length - 1];
+  const last = candles[candles.length - 1]!;
 
   for (let i = 2; i < candles.length - 2; i++) {
-    const c = candles[i];
-    const next = candles[i + 1];
+    const c = candles[i]!;
+    const next = candles[i + 1]!;
     const displacement = body(next) / avgRange;
     if (displacement < 1.3) continue;
 
@@ -186,12 +186,12 @@ export function findOrderBlocks(candles: Candle[], structure: MarketStructure): 
 export function findFVGs(candles: Candle[], structure: MarketStructure): FairValueGap[] {
   const avgRange = candles.reduce((a, c) => a + range(c), 0) / candles.length;
   const gaps: FairValueGap[] = [];
-  const last = candles[candles.length - 1];
+  const last = candles[candles.length - 1]!;
 
   for (let i = 1; i < candles.length - 1; i++) {
-    const a = candles[i - 1];
-    const b = candles[i];
-    const c = candles[i + 1];
+    const a = candles[i - 1]!;
+    const b = candles[i]!;
+    const c = candles[i + 1]!;
 
     let direction: Direction | null = null;
     let top = 0;
@@ -244,7 +244,7 @@ export function findFVGs(candles: Candle[], structure: MarketStructure): FairVal
 }
 
 export function findLiquidity(candles: Candle[]): LiquidityItem[] {
-  const last = candles[candles.length - 1];
+  const last = candles[candles.length - 1]!;
   const swings = findSwings(candles);
   const items: LiquidityItem[] = [];
   const tolerance = (Math.max(...candles.map((c) => c.high)) - Math.min(...candles.map((c) => c.low))) * 0.0015;
@@ -253,11 +253,11 @@ export function findLiquidity(candles: Candle[]): LiquidityItem[] {
   const lows = swings.filter((s) => s.kind === "low").slice(-6);
 
   for (let i = 1; i < highs.length; i++)
-    if (Math.abs(highs[i].price - highs[i - 1].price) < tolerance)
-      items.push({ type: "equal highs", price: highs[i].price, swept: last.high > highs[i].price });
+    if (Math.abs(highs[i]!.price - highs[i - 1]!.price) < tolerance)
+      items.push({ type: "equal highs", price: highs[i]!.price, swept: last.high > highs[i]!.price });
   for (let i = 1; i < lows.length; i++)
-    if (Math.abs(lows[i].price - lows[i - 1].price) < tolerance)
-      items.push({ type: "equal lows", price: lows[i].price, swept: last.low < lows[i].price });
+    if (Math.abs(lows[i]!.price - lows[i - 1]!.price) < tolerance)
+      items.push({ type: "equal lows", price: lows[i]!.price, swept: last.low < lows[i]!.price });
 
   const topHigh = highs[highs.length - 1];
   const bottomLow = lows[lows.length - 1];
@@ -265,6 +265,7 @@ export function findLiquidity(candles: Candle[]): LiquidityItem[] {
   if (bottomLow) items.push({ type: "swing low", price: bottomLow.price, swept: last.low < bottomLow.price });
 
   const prev = candles[candles.length - 2];
+  // prev may be undefined for a 1-candle series
   if (prev) {
     items.push({ type: "previous high", price: prev.high, swept: last.high > prev.high });
     items.push({ type: "previous low", price: prev.low, swept: last.low < prev.low });

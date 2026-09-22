@@ -63,9 +63,9 @@ function evaluate(prev: Candle, curr: Candle, timeframe: Timeframe): CrtResult {
     direction: state === "developing" ? direction : direction,
     conditions: conds,
     previousRange: { high: prev.high, low: prev.low },
-    sweep: conds[2].met,
+    sweep: conds[2]!.met,
     returnedInsideRange: insideRange,
-    directionalChange: conds[0].met && conds[1].met,
+    directionalChange: conds[0]!.met && conds[1]!.met,
     target: direction === "bearish" ? prev.low : prev.high,
     invalidation: direction === "bearish" ? curr.high : curr.low,
     missing: conds.filter((c) => !c.met).map((c) => c.label),
@@ -78,8 +78,8 @@ function evaluate(prev: Candle, curr: Candle, timeframe: Timeframe): CrtResult {
 
   // Developing: the sweep (the defining CRT event) happened but the candle has
   // not yet satisfied direction change and/or the return inside the range.
-  if (bearScore === 3 && bearConds[2].met) return build("bearish", bearConds, "developing");
-  if (bullScore === 3 && bullConds[2].met) return build("bullish", bullConds, "developing");
+  if (bearScore === 3 && bearConds[2]!.met) return build("bearish", bearConds, "developing");
+  if (bullScore === 3 && bullConds[2]!.met) return build("bullish", bullConds, "developing");
 
   const conds = bearScore >= bullScore ? bearConds : bullConds;
   return {
@@ -124,8 +124,8 @@ export function crtForTimeframe(symbol: string, timeframe: Timeframe): CrtResult
       current: null,
     };
   }
-  const prev = series[series.length - 2];
-  const curr = series[series.length - 1];
+  const prev = series[series.length - 2]!;
+  const curr = series[series.length - 1]!;
   return evaluate(prev, curr, timeframe);
 }
 
