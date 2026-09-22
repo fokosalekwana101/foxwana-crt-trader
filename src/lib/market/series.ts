@@ -85,12 +85,14 @@ function aggregate(base: Candle[], factor: number): Candle[] {
   const out: Candle[] = [];
   for (let i = 0; i + factor <= base.length; i += factor) {
     const slice = base.slice(i, i + factor);
+    const first = slice[0]!;
+    const last = slice[slice.length - 1]!;
     out.push({
-      time: slice[0].time,
-      open: slice[0].open,
+      time: first.time,
+      open: first.open,
       high: Math.max(...slice.map((c) => c.high)),
       low: Math.min(...slice.map((c) => c.low)),
-      close: slice[slice.length - 1].close,
+      close: last.close,
     });
   }
   return out;
@@ -112,11 +114,11 @@ export function getSeries(symbol: string, timeframe: Timeframe, limit = 120): Ca
 
 export function lastPrice(symbol: string): number {
   const s = getSeries(symbol, "5M", 2);
-  return s[s.length - 1].close;
+  return s[s.length - 1]!.close;
 }
 
 export function dayChangePercent(symbol: string): number {
   const d = getSeries(symbol, "1D", 2);
   if (d.length < 2) return 0;
-  return ((d[1].close - d[0].close) / d[0].close) * 100;
+  return ((d[1]!.close - d[0]!.close) / d[0]!.close) * 100;
 }

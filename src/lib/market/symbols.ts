@@ -30,7 +30,7 @@ export const DEFAULT_WATCHLIST = [
 ];
 
 export function getSymbol(symbol: string): SymbolSpec {
-  return SYMBOLS.find((s) => s.symbol === symbol) ?? SYMBOLS[0];
+  return SYMBOLS.find((s) => s.symbol === symbol) ?? SYMBOLS[0]!;
 }
 
 export function formatPrice(symbol: string, value: number | null | undefined): string {
