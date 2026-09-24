@@ -103,7 +103,7 @@ export function getSeries(symbol: string, timeframe: Timeframe, limit = 120): Ca
   const key = `${symbol}:${timeframe}`;
   let series = cache.get(key);
   if (!series) {
-    const baseCount = 288 * 21 * 26; // ~26 monthly candles of 5M data
+    const baseCount = 288 * 21 * 7; // ~7 monthly candles of 5M base data
     const base = cache.get(`${symbol}:${BASE_TF}`) ?? buildBase(symbol, baseCount);
     cache.set(`${symbol}:${BASE_TF}`, base);
     series = timeframe === "5M" ? base : aggregate(base, AGGREGATION[timeframe]);
