@@ -1,6 +1,7 @@
 import type { Direction, SignalStrength, Timeframe, TradingMode } from "../market/types";
 import type { SpikeRisk } from "../engines/fundamentals";
 import { useLocalState } from "./local";
+import { useProfileKey } from "./profile";
 
 export type TradeResult = "win" | "loss" | "breakeven" | "open";
 
@@ -126,8 +127,9 @@ export const SAMPLE_JOURNAL: JournalEntry[] = [
   },
 ];
 
+/** Journal of the active profile only. Starts empty — no demo trades are counted as real performance. */
 export function useJournal() {
-  return useLocalState<JournalEntry[]>(JOURNAL_KEY, SAMPLE_JOURNAL);
+  return useLocalState<JournalEntry[]>(useProfileKey("journal.v1"), []);
 }
 
 export function blankEntry(): JournalEntry {
