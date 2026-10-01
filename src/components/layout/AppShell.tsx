@@ -132,7 +132,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* -------- Mobile header -------- */}
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur lg:hidden">
-        <span className="min-w-0 truncate"><Wordmark compact={false} /></span>
+        <span className="min-[400px]:hidden"><Wordmark compact /></span>
+        <span className="hidden min-[400px]:block"><Wordmark /></span>
         <div className="flex items-center gap-2">
           <ProfileBadge />
           <ThemeToggle />
