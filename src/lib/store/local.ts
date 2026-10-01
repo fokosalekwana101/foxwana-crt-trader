@@ -20,15 +20,18 @@ export function useLocalState<T>(key: string, fallback: T) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    let next = fallback;
     try {
       const raw = window.localStorage.getItem(key);
       if (raw) {
         const parsed = JSON.parse(raw);
-        setValue(Array.isArray(parsed) ? parsed : { ...(fallback as object), ...parsed });
+        next = Array.isArray(parsed) ? parsed : { ...(fallback as object), ...parsed };
       }
     } catch {
       /* ignore corrupt storage */
     }
+    // Always reset when the key changes so profiles never leak into each other.
+    setValue(next);
     setHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
