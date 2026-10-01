@@ -8,8 +8,12 @@ import type { EconomicEvent } from "../engines/fundamentals";
  * calendar/news provider can replace this array without touching the
  * fundamental engine or the UI.
  */
-const DAY = "2026-09-22";
-const NEXT = "2026-09-23";
+// Demo dates are anchored to "today" so the sample always contains both a
+// released group (yesterday) and upcoming groups (tomorrow). Replace with a
+// live calendar feed in production.
+const dayOffset = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString().slice(0, 10);
+const DAY = dayOffset(-1);
+const NEXT = dayOffset(1);
 
 export const DEMO_EVENTS: EconomicEvent[] = [
   // Released USD release group (Actual available) — 3 strong / 1 weak.

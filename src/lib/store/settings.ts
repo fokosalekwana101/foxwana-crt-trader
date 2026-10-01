@@ -1,6 +1,6 @@
-import { DEFAULT_WATCHLIST } from "../market/symbols";
 import type { Timeframe, TradingMode } from "../market/types";
 import { useLocalState } from "./local";
+import { useProfileKey } from "./profile";
 
 export type Settings = {
   defaultMode: TradingMode;
@@ -24,7 +24,8 @@ export const DEFAULT_SETTINGS: Settings = {
   accountSize: 10000,
   riskPercent: 1,
   fixedRisk: null,
-  watchlist: DEFAULT_WATCHLIST,
+  // Never pre-filled: the user chooses their own markets.
+  watchlist: [],
   preferredTimeframes: ["1W", "1D", "4H", "1H", "15M"],
   signalThreshold: 5,
   notifyHighImpact: true,
@@ -35,8 +36,6 @@ export const DEFAULT_SETTINGS: Settings = {
   newsDataProvider: "",
 };
 
-export const SETTINGS_KEY = "foxwana.settings.v1";
-
 export function useSettings() {
-  return useLocalState<Settings>(SETTINGS_KEY, DEFAULT_SETTINGS);
+  return useLocalState<Settings>(useProfileKey("settings.v1"), DEFAULT_SETTINGS);
 }

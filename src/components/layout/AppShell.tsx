@@ -13,11 +13,13 @@ import {
   PanelLeftOpen,
   Settings as SettingsIcon,
   Sun,
+  UserRound,
   X,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { LogoMark, Wordmark } from "@/components/brand/Logo";
 import { useTheme } from "@/lib/theme";
+import { useProfiles } from "@/lib/store/profile";
 import { cn } from "@/lib/utils";
 
 type NavItem = { to: string; label: string; short: string; icon: typeof LayoutDashboard };
@@ -33,8 +35,29 @@ const NAV: NavItem[] = [
   { to: "/about", label: "About", short: "About", icon: Info },
 ];
 
-const MOBILE_PRIMARY = NAV.slice(0, 5);
-const MOBILE_SECONDARY = NAV.slice(5);
+const MOBILE_PRIMARY = NAV.slice(0, 3);
+const MOBILE_SECONDARY = NAV.slice(3);
+
+function ProfileBadge() {
+  const { profiles, active, switchTo } = useProfiles();
+  return (
+    <label className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-card px-2 text-xs text-muted-foreground" title="Active profile">
+      <UserRound className="size-3.5" />
+      <select
+        aria-label="Active profile"
+        value={active.id}
+        onChange={(e) => switchTo(e.target.value)}
+        className="max-w-[110px] truncate bg-transparent font-medium text-foreground outline-none"
+      >
+        {profiles.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 function ThemeToggle() {
   const { theme, toggle } = useTheme();
@@ -102,10 +125,17 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
+      {/* -------- Desktop profile (discreet, top right) -------- */}
+      <div className="fixed right-6 top-4 z-30 hidden lg:block">
+        <ProfileBadge />
+      </div>
+
       {/* -------- Mobile header -------- */}
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur lg:hidden">
-        <Wordmark compact={false} />
+        <span className="min-[400px]:hidden"><Wordmark compact /></span>
+        <span className="hidden min-[400px]:block"><Wordmark /></span>
         <div className="flex items-center gap-2">
+          <ProfileBadge />
           <ThemeToggle />
           <button
             type="button"
