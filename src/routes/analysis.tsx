@@ -1,5 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { CrtChart } from "@/components/analysis/CrtChart";
+import { Disclosure, Explain } from "@/components/common/Explain";
+import { TradeProposal, CrtLevels, SavedAnalyses } from "@/components/analysis/AnalysisExtras";
 import { Upload, X } from "lucide-react";
 import { z } from "zod";
 import { buildAnalysis } from "@/lib/engines/analysis";
@@ -53,6 +56,8 @@ export const Route = createFileRoute("/analysis")({
         property: "og:description",
         content: "CRT-first multi-timeframe analysis with transparent confluence and no forced trades.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AnalysisPage,
@@ -233,183 +238,213 @@ function AnalysisPage() {
         </Panel>
       </div>
 
+      {/* ---- Chart with exact analysed objects ---- */}
+      <Panel eyebrow={`${symbol} chart`} title="What FOXWANA is looking at" action={<DataBadge kind="demo" />}>
+        <CrtChart analysis={analysis} defaultTf={analysis.crtTimeframe === "1M" ? "1W" : analysis.crtTimeframe} />
+      </Panel>
+
+      <CrtLevels analysis={analysis} />
+
+      {/* ---- Secondary: plain-language building blocks ---- */}
+      <Panel eyebrow="In plain words" title="The building blocks of this analysis">
+        <div className="grid gap-2 md:grid-cols-2">
+          <Explain term="CRT">CRT — {analysis.crt.state === "none" ? "none found" : analysis.crt.state === "developing" ? "forming" : `${analysis.direction} on ${analysis.crtTimeframe}`}</Explain>
+          <Explain term="BOS">Structure — {analysis.structure.bos ? `BOS ${analysis.structure.bos.direction}` : "no break of structure"}</Explain>
+          <Explain term="SWEEP">Liquidity — {analysis.liquidity.filter((l) => l.swept).length} sweep(s)</Explain>
+          <Explain term="FVG">FVG — {analysis.validatedFvg ? `${analysis.validatedFvg.direction} gap validated` : "none validated"}</Explain>
+          <Explain term="OB">Order block — {analysis.validatedOb ? `${analysis.validatedOb.direction} OB validated` : "none validated"}</Explain>
+          <Explain term="MSNR">MSNR — {analysis.msnr.length} level(s)</Explain>
+          <Explain term="CHoCH" />
+          <Explain term="SPIKE">Spike risk — {analysis.spikeRisk}</Explain>
+        </div>
+      </Panel>
+
+      <Disclosure title={`Conflicts (${analysis.conflicts.length})`}>
+        {analysis.conflicts.length === 0 ? <EmptyNote>No conflicts detected.</EmptyNote> : (
+          <ul className="space-y-2">{analysis.conflicts.map((c) => <WarnLine key={c.type}><strong>{c.type}:</strong> {c.detail}</WarnLine>)}</ul>
+        )}
+      </Disclosure>
+
+      <Disclosure title="Evidence & technical details">
       {/* ---- CRT detail ---- */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel eyebrow="CRT engine" title={`${TIMEFRAME_LABELS[analysis.crtTimeframe]} CRT conditions`}>
-          <ul className="space-y-2">
-            {analysis.crt.conditions.map((c) => (
-              <CheckLine key={c.label} met={c.met}>
-                {c.label}
-              </CheckLine>
-            ))}
-          </ul>
-          <div className="mt-4 grid grid-cols-2 gap-4">
-            <Field
-              label="Previous range"
-              value={
-                analysis.crt.previousRange
-                  ? `${formatPrice(symbol, analysis.crt.previousRange.low)} – ${formatPrice(symbol, analysis.crt.previousRange.high)}`
-                  : "—"
-              }
-            />
-            <Field
-              label="Invalidation"
-              value={analysis.crt.invalidation ? formatPrice(symbol, analysis.crt.invalidation) : "—"}
-              tone="bearish"
-            />
-          </div>
-        </Panel>
-
-        <Panel eyebrow="Multi-timeframe CRT" title="Nested structure">
-          <ul className="space-y-2">
-            {analysis.mtf.layers.map((l) => (
-              <li key={l.timeframe} className="flex items-center justify-between gap-2 text-sm">
-                <span className="text-muted-foreground">{TIMEFRAME_LABELS[l.timeframe]}</span>
-                <DirectionTag
-                  direction={l.state === "none" ? null : l.direction}
-                  label={l.state === "developing" ? `${l.direction} developing` : l.state === "none" ? "None" : l.direction!}
-                />
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 text-sm text-muted-foreground">{analysis.mtf.summary}</p>
-          {analysis.conflicts.map((c) => (
-            <div key={c.type} className="mt-3 rounded-md bg-warning-soft px-3 py-2.5">
-              <p className="font-display text-[11px] font-semibold uppercase tracking-[0.08em] text-warning">{c.type}</p>
-              <p className="mt-1 text-sm text-foreground">{c.detail}</p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Panel eyebrow="CRT engine" title={`${TIMEFRAME_LABELS[analysis.crtTimeframe]} CRT conditions`}>
+            <ul className="space-y-2">
+              {analysis.crt.conditions.map((c) => (
+                <CheckLine key={c.label} met={c.met}>
+                  {c.label}
+                </CheckLine>
+              ))}
+            </ul>
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <Field
+                label="Previous range"
+                value={
+                  analysis.crt.previousRange
+                    ? `${formatPrice(symbol, analysis.crt.previousRange.low)} – ${formatPrice(symbol, analysis.crt.previousRange.high)}`
+                    : "—"
+                }
+              />
+              <Field
+                label="Invalidation"
+                value={analysis.crt.invalidation ? formatPrice(symbol, analysis.crt.invalidation) : "—"}
+                tone="bearish"
+              />
             </div>
-          ))}
-        </Panel>
-      </div>
-
-      {/* ---- Validated areas ---- */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Panel eyebrow="Order blocks" title="Accepted or rejected">
-          {analysis.orderBlocks.length === 0 ? (
-            <EmptyNote>No order block candidates near price.</EmptyNote>
-          ) : (
-            <ul className="space-y-3">
-              {analysis.orderBlocks.map((ob, i) => (
-                <li key={i} className="border-b border-border pb-3 last:border-0 last:pb-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="price-figure text-sm">
-                      {formatPrice(symbol, ob.bottom)} – {formatPrice(symbol, ob.top)}
-                    </span>
-                    <Tag tone={ob.valid ? (ob.direction === "bullish" ? "bullish" : "bearish") : "neutral"}>
-                      {ob.valid ? "Valid" : "Rejected"}
-                    </Tag>
-                  </div>
-                  <p className="mt-1.5 text-xs text-muted-foreground">
-                    {(ob.valid ? ob.reasons : ob.rejections).join("; ")}
-                  </p>
+          </Panel>
+  
+          <Panel eyebrow="Multi-timeframe CRT" title="Nested structure">
+            <ul className="space-y-2">
+              {analysis.mtf.layers.map((l) => (
+                <li key={l.timeframe} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-muted-foreground">{TIMEFRAME_LABELS[l.timeframe]}</span>
+                  <DirectionTag
+                    direction={l.state === "none" ? null : l.direction}
+                    label={l.state === "developing" ? `${l.direction} developing` : l.state === "none" ? "None" : l.direction!}
+                  />
                 </li>
               ))}
             </ul>
-          )}
-        </Panel>
-
-        <Panel eyebrow="Fair value gaps" title="Strength assessment">
-          {analysis.fvgs.length === 0 ? (
-            <EmptyNote>No imbalance near price.</EmptyNote>
-          ) : (
-            <ul className="space-y-3">
-              {analysis.fvgs.map((f, i) => (
-                <li key={i} className="border-b border-border pb-3 last:border-0 last:pb-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="price-figure text-sm">
-                      {formatPrice(symbol, f.bottom)} – {formatPrice(symbol, f.top)}
+            <p className="mt-4 text-sm text-muted-foreground">{analysis.mtf.summary}</p>
+            {analysis.conflicts.map((c) => (
+              <div key={c.type} className="mt-3 rounded-md bg-warning-soft px-3 py-2.5">
+                <p className="font-display text-[11px] font-semibold uppercase tracking-[0.08em] text-warning">{c.type}</p>
+                <p className="mt-1 text-sm text-foreground">{c.detail}</p>
+              </div>
+            ))}
+          </Panel>
+        </div>
+  
+        {/* ---- Validated areas ---- */}
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Panel eyebrow="Order blocks" title="Accepted or rejected">
+            {analysis.orderBlocks.length === 0 ? (
+              <EmptyNote>No order block candidates near price.</EmptyNote>
+            ) : (
+              <ul className="space-y-3">
+                {analysis.orderBlocks.map((ob, i) => (
+                  <li key={i} className="border-b border-border pb-3 last:border-0 last:pb-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="price-figure text-sm">
+                        {formatPrice(symbol, ob.bottom)} – {formatPrice(symbol, ob.top)}
+                      </span>
+                      <Tag tone={ob.valid ? (ob.direction === "bullish" ? "bullish" : "bearish") : "neutral"}>
+                        {ob.valid ? "Valid" : "Rejected"}
+                      </Tag>
+                    </div>
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      {(ob.valid ? ob.reasons : ob.rejections).join("; ")}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+  
+          <Panel eyebrow="Fair value gaps" title="Strength assessment">
+            {analysis.fvgs.length === 0 ? (
+              <EmptyNote>No imbalance near price.</EmptyNote>
+            ) : (
+              <ul className="space-y-3">
+                {analysis.fvgs.map((f, i) => (
+                  <li key={i} className="border-b border-border pb-3 last:border-0 last:pb-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="price-figure text-sm">
+                        {formatPrice(symbol, f.bottom)} – {formatPrice(symbol, f.top)}
+                      </span>
+                      <Tag tone={f.strong ? (f.direction === "bullish" ? "bullish" : "bearish") : "neutral"}>
+                        {f.strong ? "Strong" : "Not qualified"}
+                      </Tag>
+                    </div>
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      {(f.strong ? f.reasons : f.rejections).join("; ")}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+  
+          <Panel eyebrow="Historical reaction" title="Repeated reaction areas">
+            {analysis.reactionZones.length === 0 ? (
+              <EmptyNote>No repeated historical reaction identified.</EmptyNote>
+            ) : (
+              <ul className="space-y-2.5">
+                {analysis.reactionZones.map((z, i) => (
+                  <li key={i} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="price-figure">
+                      {formatPrice(symbol, z.bottom)} – {formatPrice(symbol, z.top)}
                     </span>
-                    <Tag tone={f.strong ? (f.direction === "bullish" ? "bullish" : "bearish") : "neutral"}>
-                      {f.strong ? "Strong" : "Not qualified"}
-                    </Tag>
-                  </div>
-                  <p className="mt-1.5 text-xs text-muted-foreground">
-                    {(f.strong ? f.reasons : f.rejections).join("; ")}
-                  </p>
-                </li>
+                    <Tag tone={z.validated ? "bullish" : "neutral"}>{z.touches} touches</Tag>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="mt-3 text-xs text-muted-foreground">
+              Measured on {TIMEFRAME_LABELS[MODE_TIMEFRAMES[mode].context[MODE_TIMEFRAMES[mode].context.length - 1]!]} history.
+            </p>
+          </Panel>
+        </div>
+  
+        {/* ---- Structure / liquidity / MSNR / fib / fundamentals ---- */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Panel eyebrow="Market structure & liquidity" title="Supporting context">
+            <p className="text-sm text-foreground">{analysis.structure.description}</p>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {analysis.structure.labels.slice(-4).map((l, i) => (
+                <Tag key={i} tone={l.label.startsWith("H") ? "bullish" : "bearish"}>
+                  {l.label} {formatPrice(symbol, l.price)}
+                </Tag>
               ))}
-            </ul>
-          )}
-        </Panel>
-
-        <Panel eyebrow="Historical reaction" title="Repeated reaction areas">
-          {analysis.reactionZones.length === 0 ? (
-            <EmptyNote>No repeated historical reaction identified.</EmptyNote>
-          ) : (
-            <ul className="space-y-2.5">
-              {analysis.reactionZones.map((z, i) => (
+            </div>
+            <p className="label-eyebrow mt-4">Liquidity</p>
+            <ul className="mt-1.5 space-y-2">
+              {analysis.liquidity.slice(0, 5).map((l, i) => (
                 <li key={i} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="price-figure">
-                    {formatPrice(symbol, z.bottom)} – {formatPrice(symbol, z.top)}
+                  <span className="capitalize text-muted-foreground">{l.type}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="price-figure">{formatPrice(symbol, l.price)}</span>
+                    <Tag tone={l.swept ? "warning" : "neutral"}>{l.swept ? "Swept" : "Resting"}</Tag>
                   </span>
-                  <Tag tone={z.validated ? "bullish" : "neutral"}>{z.touches} touches</Tag>
                 </li>
               ))}
             </ul>
-          )}
-          <p className="mt-3 text-xs text-muted-foreground">
-            Measured on {TIMEFRAME_LABELS[MODE_TIMEFRAMES[mode].context[MODE_TIMEFRAMES[mode].context.length - 1]!]} history.
-          </p>
-        </Panel>
-      </div>
-
-      {/* ---- Structure / liquidity / MSNR / fib / fundamentals ---- */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel eyebrow="Market structure & liquidity" title="Supporting context">
-          <p className="text-sm text-foreground">{analysis.structure.description}</p>
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {analysis.structure.labels.slice(-4).map((l, i) => (
-              <Tag key={i} tone={l.label.startsWith("H") ? "bullish" : "bearish"}>
-                {l.label} {formatPrice(symbol, l.price)}
-              </Tag>
-            ))}
-          </div>
-          <p className="label-eyebrow mt-4">Liquidity</p>
-          <ul className="mt-1.5 space-y-2">
-            {analysis.liquidity.slice(0, 5).map((l, i) => (
-              <li key={i} className="flex items-center justify-between gap-2 text-sm">
-                <span className="capitalize text-muted-foreground">{l.type}</span>
-                <span className="flex items-center gap-2">
-                  <span className="price-figure">{formatPrice(symbol, l.price)}</span>
-                  <Tag tone={l.swept ? "warning" : "neutral"}>{l.swept ? "Swept" : "Resting"}</Tag>
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 text-xs text-muted-foreground">{analysis.session.note}</p>
-        </Panel>
-
-        <Panel eyebrow="MSNR & fundamentals" title="Levels and directional context">
-          <ul className="space-y-2">
-            {analysis.msnr.slice(0, 6).map((l) => (
-              <li key={l.label} className="flex items-center justify-between gap-2 text-sm">
-                <span className="text-muted-foreground">{l.label}</span>
-                <span className="flex items-center gap-2">
-                  <span className="price-figure">{formatPrice(symbol, l.price)}</span>
-                  <Tag tone="neutral">{l.classification}</Tag>
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          {analysis.fib && (
-            <>
-              <p className="label-eyebrow mt-4">Fibonacci 50%–75%</p>
-              <p className="mt-1.5 text-sm text-foreground">
-                {formatPrice(symbol, analysis.fib.zoneBottom)} – {formatPrice(symbol, analysis.fib.zoneTop)} ·{" "}
-                {analysis.fib.inZone ? "price inside the band" : "price outside the band"}
-              </p>
-            </>
-          )}
-
-          <p className="label-eyebrow mt-4">Fundamental bias</p>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <DirectionTag direction={analysis.fundamentalBias.bias} />
-            <SpikeRiskTag risk={analysis.spikeRisk} />
-          </div>
-          <p className="mt-1.5 text-sm text-muted-foreground">{analysis.fundamentalBias.reason}</p>
-        </Panel>
-      </div>
+            <p className="mt-4 text-xs text-muted-foreground">{analysis.session.note}</p>
+          </Panel>
+  
+          <Panel eyebrow="MSNR & fundamentals" title="Levels and directional context">
+            <ul className="space-y-2">
+              {analysis.msnr.slice(0, 6).map((l) => (
+                <li key={l.label} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-muted-foreground">{l.label}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="price-figure">{formatPrice(symbol, l.price)}</span>
+                    <Tag tone="neutral">{l.classification}</Tag>
+                  </span>
+                </li>
+              ))}
+            </ul>
+  
+            {analysis.fib && (
+              <>
+                <p className="label-eyebrow mt-4">Fibonacci 50%–75%</p>
+                <p className="mt-1.5 text-sm text-foreground">
+                  {formatPrice(symbol, analysis.fib.zoneBottom)} – {formatPrice(symbol, analysis.fib.zoneTop)} ·{" "}
+                  {analysis.fib.inZone ? "price inside the band" : "price outside the band"}
+                </p>
+              </>
+            )}
+  
+            <p className="label-eyebrow mt-4">Fundamental bias</p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <DirectionTag direction={analysis.fundamentalBias.bias} />
+              <SpikeRiskTag risk={analysis.spikeRisk} />
+            </div>
+            <p className="mt-1.5 text-sm text-muted-foreground">{analysis.fundamentalBias.reason}</p>
+          </Panel>
+        </div>
+  
+        </Disclosure>
 
       {/* ---- Risk ---- */}
       <Panel eyebrow="Risk management" title="Position sizing from your settings">
@@ -430,6 +465,9 @@ function AnalysisPage() {
           <EmptyNote>Position sizing appears once a validated entry zone and technical stop loss exist.</EmptyNote>
         )}
       </Panel>
+
+      <TradeProposal analysis={analysis} risk={risk} />
+      <SavedAnalyses analysis={analysis} />
 
       {/* ---- Screenshots ---- */}
       <Panel eyebrow="Screenshot analysis" title="Upload chart screenshots">
