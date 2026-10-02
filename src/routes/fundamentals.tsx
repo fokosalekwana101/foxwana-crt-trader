@@ -8,7 +8,9 @@ import {
   type CurrencyBias,
 } from "@/lib/engines/fundamentals";
 import { DEMO_EVENTS } from "@/lib/data/calendar";
-import { CURRENCIES, SYMBOLS } from "@/lib/market/symbols";
+import { CURRENCIES, SYMBOLS, getSymbol } from "@/lib/market/symbols";
+import { useSettings } from "@/lib/store/settings";
+import { Explain } from "@/components/common/Explain";
 import { readFileAsDataUrl, type NewsUpload } from "@/lib/engines/screenshot";
 import {
   DataBadge,
@@ -35,6 +37,8 @@ export const Route = createFileRoute("/fundamentals")({
         property: "og:description",
         content: "Previous → Forecast → Actual event analysis for all major currencies, with spike-risk detection.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: FundamentalsPage,
@@ -48,10 +52,33 @@ function FundamentalsPage() {
   const [uploads, setUploads] = useState<NewsUpload[]>([]);
 
   const biases = useMemo(() => CURRENCIES.map((c) => currencyBias(c, DEMO_EVENTS)).filter((b) => b.total > 0), []);
-  const groups = useMemo(() => releaseGroups(DEMO_EVENTS), []);
+  const allGroups = useMemo(() => releaseGroups(DEMO_EVENTS), []);
+  const [settings] = useSettings();
+  const [showPast, setShowPast] = useState(false);
+  const [allImpacts, setAllImpacts] = useState(false);
+  const relevant = useMemo(() => {
+    const set = new Set<string>();
+    for (const sym of settings.watchlist) {
+      const sp = getSymbol(sym);
+      set.add(sp.base);
+      set.add(sp.quote);
+      if (sp.group === "metal") set.add("USD");
+    }
+    return set;
+  }, [settings.watchlist]);
+  const now = Date.now();
+  const groups = allGroups
+    .filter((g) => relevant.size === 0 || relevant.has(g.currency))
+    .filter((g) => showPast || new Date(g.time).getTime() > now)
+    .map((g) => ({ ...g, events: allImpacts ? g.events : g.events.filter((e) => e.impact === "high") }))
+    .filter((g) => g.events.length > 0)
+    .sort((a, b) => a.time.localeCompare(b.time));
   const pairs = useMemo(
-    () => SYMBOLS.filter((s) => s.group !== "index").map((s) => pairBias(s.symbol, biases)),
-    [biases],
+    () =>
+      SYMBOLS.filter((s) => s.group !== "index" && (settings.watchlist.length === 0 || settings.watchlist.includes(s.symbol))).map((s) =>
+        pairBias(s.symbol, biases),
+      ),
+    [biases, settings.watchlist],
   );
 
   async function onFiles(files: FileList | null) {
@@ -82,8 +109,22 @@ function FundamentalsPage() {
         <DataBadge kind="demo" />
       </PageHeader>
 
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted-foreground">
+          {relevant.size ? `Showing currencies in your markets: ${[...relevant].join(", ")}` : "No markets selected — showing all major currencies."}
+        </span>
+        <button type="button" onClick={() => setShowPast((v) => !v)} className={`rounded-md border px-3 py-1.5 font-medium ${showPast ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground"}`}>
+          {showPast ? "Hide past events" : "Show past events"}
+        </button>
+        <button type="button" onClick={() => setAllImpacts((v) => !v)} className={`rounded-md border px-3 py-1.5 font-medium ${allImpacts ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground"}`}>
+          {allImpacts ? "High impact only" : "Include medium/low impact"}
+        </button>
+      </div>
+      <Explain term="SPIKE" />
+
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel className="lg:col-span-2" eyebrow="Release groups" title="Simultaneous events analysed together" bodyClassName="p-0 sm:p-0">
+        <Panel className="lg:col-span-2" eyebrow="Release groups" title={showPast ? "Upcoming and past events" : "Upcoming market-moving events"} bodyClassName="p-0 sm:p-0">
+          {groups.length === 0 && <div className="p-5"><EmptyNote>No upcoming high-impact events for your markets.</EmptyNote></div>}
           <ul className="divide-y divide-border">
             {groups.map((g) => (
               <li key={`${g.currency}-${g.group}`} className="px-4 py-4 sm:px-5">
