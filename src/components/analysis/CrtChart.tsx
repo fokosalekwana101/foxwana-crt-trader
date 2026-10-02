@@ -13,7 +13,7 @@ import {
 import { Maximize2, Minimize2 } from "lucide-react";
 import type { AnalysisResult } from "@/lib/engines/analysis";
 import { getSeries } from "@/lib/market/series";
-import { formatPrice } from "@/lib/market/symbols";
+import { formatPrice, getSymbol } from "@/lib/market/symbols";
 import { MODE_TIMEFRAMES, type Candle, type Timeframe } from "@/lib/market/types";
 import { useTheme } from "@/lib/theme";
 
@@ -148,7 +148,7 @@ export function CrtChart({ analysis, defaultTf }: { analysis: AnalysisResult; de
     const down = resolveColor("--bearish");
     const series: ISeriesApi<"Candlestick"> = chart.addSeries(CandlestickSeries, {
       upColor: up, downColor: down, wickUpColor: up, wickDownColor: down, borderVisible: false,
-      priceFormat: { type: "price", precision: String(candles.at(-1)?.close ?? 1).includes(".") ? Math.min(5, Math.max(1, formatPrice(analysis.symbol, candles.at(-1)!.close).split(".")[1]?.length ?? 2)) : 2, minMove: 10 ** -(formatPrice(analysis.symbol, 1).split(".")[1]?.length ?? 2) },
+      priceFormat: { type: "price", precision: getSymbol(analysis.symbol).digits, minMove: 10 ** -getSymbol(analysis.symbol).digits },
     });
     series.setData(candles.map((c) => ({ time: (c.time / 1000) as UTCTimestamp, open: c.open, high: c.high, low: c.low, close: c.close })));
 
