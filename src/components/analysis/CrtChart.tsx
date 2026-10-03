@@ -119,7 +119,7 @@ function snap(candles: Candle[], time: number): number | null {
 
 export function CrtChart({ analysis, defaultTf }: { analysis: AnalysisResult; defaultTf: Timeframe }) {
   const [tf, setTf] = useState<Timeframe>(defaultTf);
-  const [hidden, setHidden] = useState<Set<Layer>>(new Set());
+  const [hidden, setHidden] = useState<Set<Layer>>(new Set(["levels"]));
   const [full, setFull] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const elRef = useRef<HTMLDivElement>(null);
