@@ -119,7 +119,7 @@ function snap(candles: Candle[], time: number): number | null {
 
 export function CrtChart({ analysis, defaultTf }: { analysis: AnalysisResult; defaultTf: Timeframe }) {
   const [tf, setTf] = useState<Timeframe>(defaultTf);
-  const [hidden, setHidden] = useState<Set<Layer>>(new Set());
+  const [hidden, setHidden] = useState<Set<Layer>>(new Set(["levels"]));
   const [full, setFull] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const elRef = useRef<HTMLDivElement>(null);
@@ -143,6 +143,7 @@ export function CrtChart({ analysis, defaultTf }: { analysis: AnalysisResult; de
       rightPriceScale: { borderColor: grid },
       timeScale: { borderColor: grid, timeVisible: true, rightOffset: 8 },
       crosshair: { mode: 0 },
+      localization: { locale: "en-US" },
     });
     const up = resolveColor("--bullish");
     const down = resolveColor("--bearish");

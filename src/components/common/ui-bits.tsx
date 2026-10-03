@@ -173,7 +173,7 @@ export function PageHeader({
   );
 }
 
-export function Field({ label, value, tone }: { label: string; value: ReactNode; tone?: Tone }) {
+export function Field({ label, value, tone }: { label: string; value: ReactNode; tone?: Tone | undefined }) {
   return (
     <div>
       <p className="label-eyebrow">{label}</p>
