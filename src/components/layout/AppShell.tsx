@@ -190,7 +190,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* -------- Content -------- */}
       <main className={cn("transition-[padding] duration-200", collapsed ? "lg:pl-[68px]" : "lg:pl-[236px]")}>
-        <div className="mx-auto w-full max-w-[1500px] space-y-6 px-4 pb-28 pt-5 sm:px-6 lg:px-9 lg:pb-12 lg:pt-8">
+        <div className="mx-auto w-full max-w-[1500px] space-y-6 px-4 pb-28 pt-5 sm:px-6 lg:px-9 lg:pb-12 lg:pt-16">
           {children}
         </div>
       </main>

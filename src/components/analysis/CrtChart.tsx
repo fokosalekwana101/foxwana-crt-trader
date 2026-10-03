@@ -143,6 +143,7 @@ export function CrtChart({ analysis, defaultTf }: { analysis: AnalysisResult; de
       rightPriceScale: { borderColor: grid },
       timeScale: { borderColor: grid, timeVisible: true, rightOffset: 8 },
       crosshair: { mode: 0 },
+      localization: { locale: "en-US" },
     });
     const up = resolveColor("--bullish");
     const down = resolveColor("--bearish");
