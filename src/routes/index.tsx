@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight, BarChart3, BookOpen, CandlestickChart, Info, LineChart, Newspaper, Settings as SettingsIcon } from "lucide-react";
 import { useProfiles } from "@/lib/store/profile";
 import { useSettings } from "@/lib/store/settings";
-import { DataBadge } from "@/components/common/ui-bits";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,13 +21,13 @@ export const Route = createFileRoute("/")({
 });
 
 const CARDS = [
-  { to: "/analysis", title: "Market Analysis", desc: "Interactive chart with the exact CRT, FVG and order block FOXWANA found.", icon: CandlestickChart, featured: true },
-  { to: "/markets", title: "Markets", desc: "Choose the markets you watch and see FOXWANA's suggestions.", icon: LineChart },
-  { to: "/fundamentals", title: "Fundamentals / News", desc: "Upcoming high-impact events for your markets only.", icon: Newspaper },
-  { to: "/journal", title: "Trade Journal", desc: "Record every trade with its reasons and lessons.", icon: BookOpen },
-  { to: "/statistics", title: "Statistics", desc: "Win rate, P/L and performance from your own journal.", icon: BarChart3 },
-  { to: "/settings", title: "Settings", desc: "Profiles, risk defaults and preferences.", icon: SettingsIcon },
-  { to: "/about", title: "About", desc: "The FOXWANA story and the CRT philosophy.", icon: Info },
+  { to: "/analysis", title: "Market Analysis", desc: "Analyze CRT setups, structure, OB/FVG and entry validation.", icon: CandlestickChart, featured: true },
+  { to: "/markets", title: "Markets", desc: "Choose and manage monitored markets.", icon: LineChart },
+  { to: "/fundamentals", title: "Fundamentals / News", desc: "View important upcoming high-impact events.", icon: Newspaper },
+  { to: "/journal", title: "Trade Journal", desc: "Record and review trades.", icon: BookOpen },
+  { to: "/statistics", title: "Statistics", desc: "Review performance and trading statistics.", icon: BarChart3 },
+  { to: "/settings", title: "Settings", desc: "Manage profile, risk and preferences.", icon: SettingsIcon },
+  { to: "/about", title: "About", desc: "Learn about FOXWANA.", icon: Info },
 ] as const;
 
 function Home() {
@@ -50,7 +49,7 @@ function Home() {
               : `You are monitoring ${settings.watchlist.length} market${settings.watchlist.length === 1 ? "" : "s"}.`}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <DataBadge kind="demo" />
+            <p className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground">No valid setup currently detected.</p>
           </div>
         </div>
       </section>
